@@ -1,4 +1,3 @@
-from pynpm import NPMPackage
 import os
 import docker
 import subprocess
@@ -6,7 +5,7 @@ import time
 import kubernetes
 import shutil
 
-# install pycurl , docker, kubernetes
+# install pycurl
 client = docker.from_env()
 imageTag = "ready4test"
 repository = "omerlustig/pizza"
