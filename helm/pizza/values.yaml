@@ -1,0 +1,14 @@
+# values.yaml
+
+deployment:
+    image: "omerlustig/pizza"
+    tag: "ready4test"
+    replicas: 1
+
+namespace:
+        name: "example"
+        
+
+general:
+    name: "big-pizza"  
+    port: 3000    

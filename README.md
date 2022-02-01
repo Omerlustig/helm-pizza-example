@@ -652,7 +652,7 @@ module.exports = () => {
 Now, we can require our little helper in `server.js`.
 
 ```js
-const generateId = require('./lib/generate-id');
+const generateId = require('./app/lib/generate-id');
 ```
 
 ### Actually Putting a Pizza in the Data Store
@@ -682,7 +682,7 @@ const app = express();
 const path = require('path');
 const bodyParser = require('body-parser');
 
-const generateId = require('./lib/generate-id');
+const generateId = require('./app/lib/generate-id');
 
 app.use(express.static('static'));
 app.use(bodyParser.urlencoded({ extended: true }));

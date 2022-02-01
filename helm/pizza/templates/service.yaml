@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.general.name }}
+  namespace: {{ .Values.namespace.name }}
+spec:
+  ports:
+    - port: {{ .Values.general.port }}
+      targetPort: {{ .Values.general.port }}
+  selector:
+    name: {{ .Values.general.name }}
+  type: NodePort
