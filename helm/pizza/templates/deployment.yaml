@@ -20,3 +20,4 @@ spec:
           image: {{ .Values.deployment.image }}:{{ .Values.deployment.tag }}
           ports:
             - containerPort: {{ .Values.general.port }}
+          imagePullPolicy: Always
