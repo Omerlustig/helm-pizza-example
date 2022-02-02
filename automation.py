@@ -65,7 +65,7 @@ def executeApiRequest(port):
 
 def runUnitTests():
     logger.info("Running unit tests...")
-    os.chdir('app')
+    os.chdir('pizza-express-master')
     os.system("npm install")
     exitCode = os.system("npm test")
     if exitCode != 0:
@@ -149,22 +149,6 @@ def helmUninstall(chartName):
     if uninstallResult is not None and "release \"" + chartName + "\" uninstalled" not in uninstallResult:
         raise Exception("Failed uninstalling chart: [" + str(chartName) + "]\nError: [" + str(uninstallResult) + "]")
 
-    # isNamespaceRemoved = False
-    # retries = 12
-    # count = 0
-    # while not isNamespaceRemoved and count < retries:
-    #     namespaces = kubernetes.client.CoreV1Api().list_namespace()
-    #     for namespace in namespaces.items:
-    #         if namespace.metadata.name == namespace:
-    #             logger.info("namespace is not deleted yet - waiting...")
-    #             time.sleep(5)
-    #             count += 1
-    #             break
-    #         else:
-    #             isNamespaceRemoved = True
-    #
-    # if not isNamespaceRemoved:
-    #     raise Exception("namespace wasnt removed - helm uninstall failed!!")
     if isChartAlreadyInstalled:
         time.sleep(60)
 
@@ -180,20 +164,29 @@ def helmInstall(chartName, chartLocation, imageTag, replicas, namespace, name, p
     logger.info("Helm chart was installed successfully!")
 
 
-if __name__ == '__main__':
-    # runUnitTests()
-    # buildDockerImage(repository, imageTag)
-    # pushDockerImage(repository, imageTag)
-    # os.system("kind create cluster --name " + clusterName + " --config kindClusterConfig.yaml")
-    # os.system("kubectl config set-cluster " + clusterName)
-    #
-    # kubernetes.config.load_config()
-    # helmUninstall(chartName)
-    # helmInstall(chartName, chartLocation, imageTag, replicas, namespace, name, port)
-    # checkDeploymentIsReady(namespace, name, replicas)
-    # executeApiRequest(port)
-    # tagDockerImage(repository, imageTag, imageTagTested)
-    # pushDockerImage(repository, imageTagTested)
-    # os.system("kind delete cluster --name " + clusterName)
+def createKindCluster(clusterName):
+    logger.info("Creating kind cluster")
+    os.system("kind create cluster --name " + clusterName + " --config kindClusterConfig.yaml")
+    os.system("kubectl config set-cluster " + clusterName)
+    kubernetes.config.load_config()
+    logger.info("Kind cluster was created successfully")
 
+
+def deleteKindCluster(clusterName):
+    logger.info("Deleting kind cluster")
     runCliCmd("kind delete cluster --name " + clusterName)
+    logger.info("Kind cluster was deleted successfully")
+
+
+if __name__ == '__main__':
+    runUnitTests()
+    buildDockerImage(repository, imageTag)
+    pushDockerImage(repository, imageTag)
+    createKindCluster(clusterName)
+    helmUninstall(chartName)
+    helmInstall(chartName, chartLocation, imageTag, replicas, namespace, name, port)
+    checkDeploymentIsReady(namespace, name, replicas)
+    executeApiRequest(port)
+    tagDockerImage(repository, imageTag, imageTagTested)
+    pushDockerImage(repository, imageTagTested)
+    deleteKindCluster(clusterName)
