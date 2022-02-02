@@ -6,7 +6,7 @@ import kubernetes
 import shutil
 import logging
 
-# install pycurl
+
 client = docker.from_env()
 imageTag = "ready4test"
 repository = "omerlustig/pizza"
