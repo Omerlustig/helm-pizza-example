@@ -20,4 +20,3 @@ spec:
           image: {{ .Values.deployment.image }}:{{ .Values.deployment.tag }}
           ports:
             - containerPort: {{ .Values.general.port }}
-              hostPort: {{ .Values.general.port }}

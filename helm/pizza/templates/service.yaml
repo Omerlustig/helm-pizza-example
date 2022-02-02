@@ -6,7 +6,7 @@ metadata:
 spec:
   ports:
     - port: {{ .Values.general.port }}
-      targetPort: {{ .Values.general.port }}
+      nodePort: 30000
   selector:
-    name: {{ .Values.general.name }}
+    app: {{ .Values.general.name }}
   type: NodePort
