@@ -4,6 +4,7 @@ import subprocess
 import time
 import kubernetes
 import shutil
+import logging
 
 # install pycurl
 client = docker.from_env()
@@ -16,7 +17,21 @@ namespace = "example"
 name = "big-pizza"
 imageTagTested = "tested"
 port = 3000
-chartLocation = "helm\\pizza"
+chartLocation = os.path.join("helm", "pizza")
+
+
+def getLogger(name):
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                                  "%Y-%m-%d %H:%M:%S")
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    log = logging.getLogger(name=name)
+    log.addHandler(handler)
+    log.setLevel(logging.INFO)
+    return log
+
+
+logger = getLogger("pizza-automation")
 
 
 def runCliCmd(command):
@@ -29,7 +44,6 @@ def runCliCmd(command):
                 output += b
             for c in process.stderr:
                 error += c
-            process.communicate(timeout=10000)
     except Exception as e:
         errorMessage = "***** Failed to run cli command using subprocess maybe timeout!\n ErrorMessage: [" + str(
             e) + "]"
@@ -41,19 +55,16 @@ def runCliCmd(command):
     return output
 
 
-def deployNewImageToCluster():
-    cmd = runCliCmd("kubectl apply -f deployment.yaml")
-    print(cmd)
-
-
 def executeApiRequest(port):
+    logger.info("Executing api request...")
     apiRequestReuslt = runCliCmd("curl -i 127.0.0.1:" + str(port))
     if "HTTP/1.1 200 OK" not in apiRequestReuslt:
         raise Exception("Api request failed\n request result: " + str(apiRequestReuslt))
-    print("Api request completed successfully!")
+    logger.info("Api request completed successfully!")
 
 
 def runUnitTests():
+    logger.info("Running unit tests...")
     os.chdir('app')
     os.system("npm install")
     exitCode = os.system("npm test")
@@ -62,24 +73,25 @@ def runUnitTests():
     shutil.rmtree("node_modules")
     os.remove("package-lock.json")
     os.chdir("..")
-    print("Unit tests passed successfully!")
+    logger.info("Unit tests passed successfully!")
 
 
 def buildDockerImage(repository, imageTag):
-    print("Building docker image...")
-    client.images.build(path=".", tag=repository + "/" + imageTag)
-    print("Docker image was built successfully!")
+    logger.info("Building docker image...")
+    client.images.build(path=".", tag=repository + ":" + imageTag)
+    logger.info("Docker image was built successfully!")
 
 
 def pushDockerImage(repository, imageTag):
-    print("Pushing docker image...")
+    logger.info("Pushing docker image...")
     client.images.push(repository=repository, tag=imageTag)
-    print("Docker image was pushed successfully!")
+    logger.info("Docker image was pushed successfully!")
 
 
 def tagDockerImage(repository, imageTag, newTag):
-    cmd = runCliCmd("docker tag " + repository + ":" + imageTag + " " + repository + ":" + newTag)
-    print(cmd)
+    logger.info("Tagging docker image...")
+    runCliCmd("docker tag " + repository + ":" + imageTag + " " + repository + ":" + newTag)
+    logger.info("Docker image wat tagged successfully!")
 
 
 def getDeployment(namespace, deploymentName):
@@ -106,6 +118,7 @@ def getDeployment(namespace, deploymentName):
 
 
 def checkDeploymentIsReady(namespace, deploymentName, replicas):
+    logger.info("Checking deployment is ready...")
     isDeploymentReady = False
     retries = 12
     count = 0
@@ -115,19 +128,19 @@ def checkDeploymentIsReady(namespace, deploymentName, replicas):
         if readyReplicas is not None and readyReplicas == replicas:
             isDeploymentReady = True
         else:
-            print("deployment is not ready - sleeping 5 seconds and checking again")
+            logger.info("deployment is not ready - sleeping 5 seconds and checking again")
             count += 1
             time.sleep(5)
 
 
 def helmUninstall(chartName):
-    print("uninstalling existing helm chart")
+    logger.info("uninstalling existing helm chart")
     uninstallResult = None
     try:
         uninstallResult = runCliCmd("helm uninstall " + chartName)
     except Exception as e:
         if "release: not found" in str(e):
-            print("chart is not installed - nothing to remove")
+            logger.info("chart is not installed - nothing to remove")
         else:
             raise Exception("Failed uninstalling chart: [" + str(chartName) + "]\nError: [" + str(e) + "]")
 
@@ -141,7 +154,7 @@ def helmUninstall(chartName):
     #     namespaces = kubernetes.client.CoreV1Api().list_namespace()
     #     for namespace in namespaces.items:
     #         if namespace.metadata.name == namespace:
-    #             print("namespace is not deleted yet - waiting...")
+    #             logger.info("namespace is not deleted yet - waiting...")
     #             time.sleep(5)
     #             count += 1
     #             break
@@ -154,14 +167,14 @@ def helmUninstall(chartName):
 
 
 def helmInstall(chartName, chartLocation, imageTag, replicas, namespace, name, port):
-    print("installing helm chart")
+    logger.info("Installing helm chart...")
     cmd = runCliCmd("helm install " + chartName + " " + chartLocation +
                     " --set deployment.tag=" + imageTag +
                     " --set deployment.replicas=" + str(replicas) +
                     " --set namespace.name=" + namespace +
                     " --set deployment.name=" + name +
                     " --set general.port=" + str(port))
-    print(cmd)
+    logger.info("Helm chart was installed successfully!")
 
 
 if __name__ == '__main__':
